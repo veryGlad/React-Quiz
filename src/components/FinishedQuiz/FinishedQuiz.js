@@ -20,7 +20,7 @@ const FinishedQuiz = props => {
                     const cls = [
                         "fa",
                         props.resuelts[quizItem.id] === "error" ? "fa fa-times" : "fa fa-check",
-                        classes [props.resuelts[quizItem.id]]
+                        classes[props.resuelts[quizItem.id]]
                     ]
 
                     return (

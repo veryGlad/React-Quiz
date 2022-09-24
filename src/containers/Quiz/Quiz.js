@@ -2,6 +2,9 @@ import React, {Component} from "react";
 import classes from "./Quiz.module.css";
 import ActiveQuiz from "../../components/ActiveQuiz/ActiveQuiz";
 import FinishedQuiz from "../../components/FinishedQuiz/FinishedQuiz";
+import axios from "../../axios/axios-quiz";
+import Loader from "../../components/Ui/Loader/Loader";
+import {useParams} from "react-router-dom";
 
 class Quiz extends Component {
     state = {
@@ -9,37 +12,15 @@ class Quiz extends Component {
         isFinished: false,
         activeQuestion: 0,
         answerState: null,
-        quiz: [
-            {
-                question: "Какого цвета небо?",
-                rightAnswerId: 2,
-                id: 1,
-                answers: [
-                    {text: "Черный", id: 1},
-                    {text: "Синий", id: 2},
-                    {text: "Красный", id: 3},
-                    {text: "Зеленый", id: 4}
-                ]
-            },
-            {
-                question: "Сколько дней в не высокостном году?",
-                rightAnswerId: 4,
-                id: 2,
-                answers: [
-                    {text: "333", id: 1},
-                    {text: "461", id: 2},
-                    {text: "294", id: 3},
-                    {text: "365", id: 4}
-                ]
-            }
-        ]
+        quiz: [],
+        loading: true,
     }
 
     onAnswerClickHandler = (answerId) => {
         if (this.state.answerState) {
             const key = Object.keys(this.state.answerState)[0];
             if (this.state.answerState[key] === "success") {
-                return
+                return;
             }
         }
 
@@ -48,40 +29,40 @@ class Quiz extends Component {
 
         if (question.rightAnswerId === answerId) {
             if (!results[question.id]) {
-                results[question.id] = "success"
+                results[question.id] = "success";
             }
 
             this.setState({
                 answerState: {[answerId]: "success"},
                 results
-            })
+            });
 
             const timeout = window.setTimeout(() => {
                 if (this.isQuizFinished()) {
                     this.setState({
                         isFinished: true
-                    })
+                    });
                 } else {
                     this.setState({
                         activeQuestion: this.state.activeQuestion + 1,
                         answerState: null
-                    })
+                    });
                 }
 
-                window.clearTimeout(timeout)
-            }, 1000)
+                window.clearTimeout(timeout);
+            }, 1000);
 
         } else {
-            results[question.id] = "error"
+            results[question.id] = "error";
             this.setState({
                 answerState: {[answerId]: "error"},
                 results
-            })
+            });
         }
     }
 
     isQuizFinished() {
-        return this.state.activeQuestion + 1 === this.state.quiz.length
+        return this.state.activeQuestion + 1 === this.state.quiz.length;
     }
 
     retryHandler = () => {
@@ -90,7 +71,21 @@ class Quiz extends Component {
             answerState: null,
             isFinished: false,
             reslts: {}
-        })
+        });
+    }
+
+    async componentDidMount() {
+        try {
+            const response = await axios.get(`/quizes/${this.props.params.id}.json`);
+            const quiz = response.data;
+
+            this.setState({
+                quiz,
+                loading: false
+            });
+        } catch (e) {
+            console.log(e);
+        }
     }
 
     render() {
@@ -100,26 +95,32 @@ class Quiz extends Component {
                     <h1>Оветьте на все вопросы</h1>
 
                     {
-                        this.state.isFinished
-                            ? <FinishedQuiz
-                                resuelts={this.state.results}
-                                quiz={this.state.quiz}
-                                onRetry={this.retryHandler}
-                            />
-                            : <ActiveQuiz
-                                answers={this.state.quiz[this.state.activeQuestion].answers}
-                                question={this.state.quiz[this.state.activeQuestion].question}
-                                onAnswerClick={this.onAnswerClickHandler}
-                                quizLenght={this.state.quiz.length}
-                                answerNumber={this.state.activeQuestion + 1}
-                                state={this.state.answerState}
-                            />
-                    }
+                        this.state.loading
+                            ? <Loader/>
+                            : this.state.isFinished
+                                ? <FinishedQuiz
+                                    resuelts={this.state.results}
+                                    quiz={this.state.quiz}
+                                    onRetry={this.retryHandler}
+                                />
+                                : <ActiveQuiz
+                                    answers={this.state.quiz[this.state.activeQuestion].answers}
+                                    question={this.state.quiz[this.state.activeQuestion].question}
+                                    onAnswerClick={this.onAnswerClickHandler}
+                                    quizLenght={this.state.quiz.length}
+                                    answerNumber={this.state.activeQuestion + 1}
+                                    state={this.state.answerState}
+                                />
 
+                    }
                 </div>
             </div>
         )
     }
 }
 
-export default Quiz
+export default withParams(Quiz);
+
+function withParams(Component) {
+    return props => <Component {...props} params={useParams()} />;
+}
