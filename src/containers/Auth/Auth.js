@@ -1,166 +1,170 @@
-import React, {Component} from "react";
-import classes from "./Auth.module.css"
+import React, { Component } from "react";
+import classes from "./Auth.module.css";
 import Button from "../../components/Ui/Button/Button";
 import Input from "../../components/Ui/Input/Input";
-import is from "is_js"
+import is from "is_js";
 import axios from "axios";
 
 export default class Auth extends Component {
+  state = {
+    isFormValid: false,
+    formControls: {
+      email: {
+        value: "",
+        type: "email",
+        label: "Email",
+        errorMessage: "Введите коректный email",
+        valid: false,
+        touched: false,
+        validation: {
+          required: true,
+          email: true,
+        },
+      },
+      password: {
+        value: "",
+        type: "password",
+        label: "Пароль",
+        errorMessage: "Введите коректный пароль",
+        valid: false,
+        touched: false,
+        validation: {
+          required: true,
+          minLength: 6,
+        },
+      },
+    },
+  };
 
-    state = {
-        isFormValid: false,
-        formControls: {
-            email: {
-                value: "",
-                type: "email",
-                label: "Email",
-                errorMessage: "Введите коректный email",
-                valid: false,
-                touched: false,
-                validation: {
-                    required: true,
-                    email: true
-                }
-            },
-            password: {
-                value: "",
-                type: "password",
-                label: "Пароль",
-                errorMessage: "Введите коректный пароль",
-                valid: false,
-                touched: false,
-                validation: {
-                    required: true,
-                    minLength: 6
-                }
-            }
-        }
+  loginHandler = async () => {
+    const authData = {
+      email: this.state.formControls.email.value,
+      password: this.state.formControls.password.value,
+      returnSecureToken: true,
+    };
+    try {
+      const response = await axios.post(
+        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBF45dBxJOFOl6q6xZnC2R5koGkOgwKFoA",
+        authData
+      );
+
+      console.log(response.data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  registerHandler = async () => {
+    const authData = {
+      email: this.state.formControls.email.value,
+      password: this.state.formControls.password.value,
+      returnSecureToken: true,
+    };
+    try {
+      const response = await axios.post(
+        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBF45dBxJOFOl6q6xZnC2R5koGkOgwKFoA",
+        authData
+      );
+
+      console.log(response.data);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  submitHandler = (event) => {
+    event.preventDefault();
+  };
+
+  validateControl(value, validation) {
+    if (!validation) {
+      return true;
     }
 
-    loginHandler = async () => {
-        const authData = {
-            email: this.state.formControls.email.value,
-            password: this.state.formControls.password.value,
-            returnSecureToken: true
-        }
-        try {
-            const response = await axios.post("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBF45dBxJOFOl6q6xZnC2R5koGkOgwKFoA", authData)
+    let isValid = true;
 
-            console.log(response.data)
-        } catch (e) {
-            console.log(e)
-        }
+    if (validation.required) {
+      isValid = value.trim() !== "" && isValid;
     }
 
-    registerHandler = async () => {
-        const authData = {
-            email: this.state.formControls.email.value,
-            password: this.state.formControls.password.value,
-            returnSecureToken: true
-        }
-        try {
-            const response = await axios.post("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBF45dBxJOFOl6q6xZnC2R5koGkOgwKFoA", authData)
-
-            console.log(response.data)
-        } catch (e) {
-            console.log(e)
-        }
+    if (validation.email) {
+      isValid = is.email(value) && isValid;
     }
 
-    submitHandler = event => {
-        event.preventDefault()
+    if (validation.minLength) {
+      isValid = value.length >= validation.minLength && isValid;
     }
 
-    validateControl(value, validation) {
-        if (!validation) {
-            return true
-        }
+    return isValid;
+  }
 
-        let isValid = true
+  onChangeHandler = (event, controlName) => {
+    const formControls = { ...this.state.formControls };
+    const control = { ...formControls[controlName] };
 
-        if (validation.required) {
-            isValid = value.trim() !== "" && isValid
-        }
+    control.value = event.target.value;
+    control.touched = true;
+    control.valid = this.validateControl(control.value, control.validation);
 
-        if (validation.email) {
-            isValid = is.email(value) && isValid
-        }
+    formControls[controlName] = control;
 
-        if (validation.minLength) {
-            isValid = value.length >= validation.minLength && isValid
-        }
+    let isFormValid = true;
 
+    Object.keys(formControls).forEach((name) => {
+      isFormValid = formControls[name].valid && isFormValid;
+    });
 
-        return isValid
-    }
+    this.setState({
+      formControls,
+      isFormValid,
+    });
+  };
 
-    onChangeHandler = (event, controlName) => {
-        const formControls = { ...this.state.formControls }
-        const control = { ...formControls[controlName] }
+  renderInputs() {
+    return Object.keys(this.state.formControls).map((controlName, index) => {
+      const control = this.state.formControls[controlName];
+      return (
+        <Input
+          key={controlName + index}
+          type={control.type}
+          value={control.value}
+          valid={control.valid}
+          touched={control.touched}
+          label={control.label}
+          shouldValidate={!!control.validation}
+          errorMessage={control.errorMessage}
+          onChange={(event) => this.onChangeHandler(event, controlName)}
+        />
+      );
+    });
+  }
 
-        control.value = event.target.value
-        control.touched = true
-        control.valid = this.validateControl(control.value, control.validation)
+  render() {
+    return (
+      <div className={classes.auth}>
+        <div>
+          <h1>Авторизация</h1>
 
-        formControls[controlName] = control
+          <form onSubmit={this.submitHandler} className={classes.AuthForm}>
+            {this.renderInputs()}
 
-        let isFormValid = true
-
-        Object.keys(formControls).forEach(name => {
-            isFormValid = formControls[name].valid && isFormValid
-        })
-
-        this.setState({
-            formControls, isFormValid
-        })
-    }
-
-    renderInputs() {
-        return  Object.keys(this.state.formControls).map((controlName, index) => {
-            const control = this.state.formControls[controlName]
-            return (
-                <Input
-                    key={controlName + index}
-                    type={control.type}
-                    value={control.value}
-                    valid={control.valid}
-                    touched={control.touched}
-                    label={control.label}
-                    shouldValidate={!!control.validation}
-                    errorMessage={control.errorMessage}
-                    onChange={event => this.onChangeHandler(event, controlName)}
-                />
-            )
-        })
-    }
-
-    render() {
-        return (
-            <div className={classes.auth}>
-                <div>
-                    <h1>Авторизация</h1>
-
-                    <form onSubmit={this.submitHandler} className={classes.AuthForm}>
-
-                        { this.renderInputs() }
-
-                        <Button
-                            type={"success"}
-                            onClick={this.loginHandler}
-                            disabled={!this.state.isFormValid}
-                        >
-                            Войти
-                        </Button>
-                        <Button
-                            type={"primary"}
-                            onClick={this.registerHandler}
-                            disabled={!this.state.isFormValid}
-                        >
-                            Зариегестрироваться
-                        </Button>
-                    </form>
-                </div>
-            </div>
-        )
-    }
+            <Button
+              type={"success"}
+              onClick={this.loginHandler}
+              disabled={!this.state.isFormValid}
+            >
+              Войти
+            </Button>
+            <Button
+              type={"primary"}
+              onClick={this.registerHandler}
+              disabled={!this.state.isFormValid}
+            >
+              Зариегестрироваться
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 }
