@@ -1,82 +1,60 @@
-import React, { Component } from "react";
+import React, { useState } from "react";
 import classes from "./Auth.module.css";
 import Button from "../../components/Ui/Button/Button";
 import Input from "../../components/Ui/Input/Input";
 import is from "is_js";
-import axios from "axios";
+import { connect } from "react-redux";
+import { auth } from "../../store/actions/auth";
+import { useNavigate } from "react-router-dom";
 
-export default class Auth extends Component {
-  state = {
-    isFormValid: false,
-    formControls: {
-      email: {
-        value: "",
-        type: "email",
-        label: "Email",
-        errorMessage: "Введите коректный email",
-        valid: false,
-        touched: false,
-        validation: {
-          required: true,
-          email: true,
-        },
-      },
-      password: {
-        value: "",
-        type: "password",
-        label: "Пароль",
-        errorMessage: "Введите коректный пароль",
-        valid: false,
-        touched: false,
-        validation: {
-          required: true,
-          minLength: 6,
-        },
-      },
+const initialFormControls = {
+  email: {
+    value: "",
+    type: "email",
+    label: "Email",
+    errorMessage: "Введите коректный email",
+    valid: false,
+    touched: false,
+    validation: {
+      required: true,
+      email: true,
     },
+  },
+  password: {
+    value: "",
+    type: "password",
+    label: "Пароль",
+    errorMessage: "Введите коректный пароль",
+    valid: false,
+    touched: false,
+    validation: {
+      required: true,
+      minLength: 6,
+    },
+  },
+};
+
+const Auth = (props) => {
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [formControls, setFormControls] = useState(initialFormControls);
+  const navigate = useNavigate();
+
+  const loginHandler = () => {
+    props
+      .auth(formControls.email.value, formControls.password.value, true)
+      .then(() => {
+        navigate("/");
+      });
+  };
+  const registerHandler = () => {
+    props.auth(formControls.email.value, formControls.password.value, false);
   };
 
-  loginHandler = async () => {
-    const authData = {
-      email: this.state.formControls.email.value,
-      password: this.state.formControls.password.value,
-      returnSecureToken: true,
-    };
-    try {
-      const response = await axios.post(
-        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBF45dBxJOFOl6q6xZnC2R5koGkOgwKFoA",
-        authData
-      );
-
-      console.log(response.data);
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  registerHandler = async () => {
-    const authData = {
-      email: this.state.formControls.email.value,
-      password: this.state.formControls.password.value,
-      returnSecureToken: true,
-    };
-    try {
-      const response = await axios.post(
-        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBF45dBxJOFOl6q6xZnC2R5koGkOgwKFoA",
-        authData
-      );
-
-      console.log(response.data);
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  submitHandler = (event) => {
+  const submitHandler = (event) => {
     event.preventDefault();
   };
 
-  validateControl(value, validation) {
+  const validateControl = (value, validation) => {
     if (!validation) {
       return true;
     }
@@ -96,33 +74,31 @@ export default class Auth extends Component {
     }
 
     return isValid;
-  }
+  };
 
-  onChangeHandler = (event, controlName) => {
-    const formControls = { ...this.state.formControls };
-    const control = { ...formControls[controlName] };
+  const onChangeHandler = (event, controlName) => {
+    const newFormControls = { ...formControls };
+    const control = { ...newFormControls[controlName] };
 
     control.value = event.target.value;
     control.touched = true;
-    control.valid = this.validateControl(control.value, control.validation);
+    control.valid = validateControl(control.value, control.validation);
 
-    formControls[controlName] = control;
+    newFormControls[controlName] = control;
 
     let isFormValid = true;
 
-    Object.keys(formControls).forEach((name) => {
-      isFormValid = formControls[name].valid && isFormValid;
+    Object.keys(newFormControls).forEach((name) => {
+      isFormValid = newFormControls[name].valid && isFormValid;
     });
 
-    this.setState({
-      formControls,
-      isFormValid,
-    });
+    setFormControls(newFormControls);
+    setIsFormValid(isFormValid);
   };
 
-  renderInputs() {
-    return Object.keys(this.state.formControls).map((controlName, index) => {
-      const control = this.state.formControls[controlName];
+  const renderInputs = () => {
+    return Object.keys(formControls).map((controlName, index) => {
+      const control = formControls[controlName];
       return (
         <Input
           key={controlName + index}
@@ -133,38 +109,45 @@ export default class Auth extends Component {
           label={control.label}
           shouldValidate={!!control.validation}
           errorMessage={control.errorMessage}
-          onChange={(event) => this.onChangeHandler(event, controlName)}
+          onChange={(event) => onChangeHandler(event, controlName)}
         />
       );
     });
-  }
+  };
 
-  render() {
-    return (
-      <div className={classes.auth}>
-        <div>
-          <h1>Авторизация</h1>
+  return (
+    <div className={classes.auth}>
+      <div>
+        <h1>Авторизация</h1>
 
-          <form onSubmit={this.submitHandler} className={classes.AuthForm}>
-            {this.renderInputs()}
+        <form onSubmit={submitHandler} className={classes.AuthForm}>
+          {renderInputs()}
 
-            <Button
-              type={"success"}
-              onClick={this.loginHandler}
-              disabled={!this.state.isFormValid}
-            >
-              Войти
-            </Button>
-            <Button
-              type={"primary"}
-              onClick={this.registerHandler}
-              disabled={!this.state.isFormValid}
-            >
-              Зариегестрироваться
-            </Button>
-          </form>
-        </div>
+          <Button
+            type={"success"}
+            onClick={loginHandler}
+            disabled={!isFormValid}
+          >
+            Войти
+          </Button>
+          <Button
+            type={"primary"}
+            onClick={registerHandler}
+            disabled={!isFormValid}
+          >
+            Зариегестрироваться
+          </Button>
+        </form>
       </div>
-    );
-  }
+    </div>
+  );
+};
+
+function mapDispatchToProps(dispatch) {
+  return {
+    auth: (email, password, isLogin) =>
+      dispatch(auth(email, password, isLogin)),
+  };
 }
+
+export default connect(null, mapDispatchToProps)(Auth);

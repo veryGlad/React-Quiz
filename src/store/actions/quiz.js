@@ -120,7 +120,7 @@ export function quizAnswerClick(answerId) {
   return (dispatch, getState) => {
     const state = getState().quiz;
 
-    if (this.state.answerState) {
+    if (state.answerState) {
       const key = Object.keys(state.answerState)[0];
       if (state.answerState[key] === "success") {
         return;

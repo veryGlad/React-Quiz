@@ -4,8 +4,8 @@ import Button from "../Ui/Button/Button";
 import { Link } from "react-router-dom";
 
 const FinishedQuiz = (props) => {
-  const successCount = Object.keys(props.resuelts).reduce((total, key) => {
-    if (props.resuelts[key] === "success") {
+  const successCount = Object.keys(props.results).reduce((total, key) => {
+    if (props.results[key] === "success") {
       total++;
     }
 
@@ -18,10 +18,10 @@ const FinishedQuiz = (props) => {
         {props.quiz.map((quizItem, index) => {
           const cls = [
             "fa",
-            props.resuelts[quizItem.id] === "error"
+            props.results[quizItem.id] === "error"
               ? "fa fa-times"
               : "fa fa-check",
-            classes[props.resuelts[quizItem.id]],
+            classes[props.results[quizItem.id]],
           ];
 
           return (
